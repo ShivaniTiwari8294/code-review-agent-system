@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Multi-Agent Code Review System</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    margin: 0;
+    padding: 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { color: #58a6ff; text-align: center; margin-bottom: 5px; }
+  .subtitle { text-align: center; color: #8b949e; margin-bottom: 20px; }
+
+  .upload-box {
+    background: #161b22; padding: 25px; border-radius: 12px;
+    text-align: center; margin: 20px 0; border: 1px solid #30363d;
+  }
+  input[type=file] { color: #e6edf3; margin: 10px 0; }
+  .btn {
+    background: #238636; color: white; border: none; padding: 10px 25px;
+    border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; margin: 5px;
+  }
+  .btn:hover { background: #2ea043; }
+  .btn-secondary { background: #da3633; }
+  .btn-secondary:hover { background: #f85149; }
+
+  .file-chip-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 15px 0; }
+  .file-chip {
+    background: #21262d; border: 1px solid #30363d; border-radius: 20px;
+    padding: 6px 14px; font-size: 13px; display: flex; align-items: center; gap: 8px;
+  }
+  .file-chip .remove { color: #f85149; cursor: pointer; font-weight: bold; }
+
+  .tabs { display: flex; gap: 8px; margin: 20px 0 10px; flex-wrap: wrap; justify-content: center; }
+  .tab {
+    background: #21262d; border: 1px solid #30363d; padding: 8px 18px;
+    border-radius: 20px; cursor: pointer; font-size: 14px; color: #e6edf3;
+  }
+  .tab.active { background: #58a6ff; color: #0d1419; font-weight: bold; }
+
+  .summary-bar {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    padding: 15px 20px; margin: 20px 0; overflow-x: auto;
+  }
+  .summary-bar table { width: 100%; border-collapse: collapse; }
+  .summary-bar th, .summary-bar td { padding: 8px; border-bottom: 1px solid #30363d; text-align: left; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .file-result {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    margin: 15px 0; overflow: hidden;
+  }
+  .file-header {
+    background: #21262d; padding: 12px 18px; display: flex;
+    justify-content: space-between; align-items: center;
+  }
+  .file-header h3 { margin: 0; color: #58a6ff; font-size: 16px; }
+  .score-badge { font-size: 16px; font-weight: bold; padding: 4px 14px; border-radius: 20px; }
+  .score-good { background: #238636; color: white; }
+  .score-mid { background: #d29922; color: #0d1117; }
+  .score-bad { background: #da3633; color: white; }
+
+  .issue { margin: 8px 18px; padding: 10px; background: #0d1117; border-radius: 6px; border-left: 3px solid #f85149; }
+  .fix { color: #3fb950; font-size: 13px; margin-top: 4px; }
+  .ok { color: #3fb950; padding: 8px 18px; }
+  .lang-tag { color: #8b949e; font-size: 12px; }
+
+  /* Chat widget */
+  #chat-toggle {
+    position: fixed; bottom: 20px; right: 20px; background: #58a6ff;
+    color: #0d1117; border: none; border-radius: 50%; width: 56px; height: 56px;
+    font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); z-index: 1000;
+  }
+  #chat-box {
+    position: fixed; bottom: 85px; right: 20px; width: 320px; height: 420px;
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+    display: none; flex-direction: column; overflow: hidden; z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #chat-box.open { display: flex; }
+  #chat-header {
+    background: #21262d; padding: 12px; font-weight: bold; color: #58a6ff;
+    border-bottom: 1px solid #30363d;
+  }
+  #chat-messages { flex: 1; overflow-y: auto; padding: 10px; font-size: 13px; }
+  .chat-msg { margin: 8px 0; padding: 8px 12px; border-radius: 8px; max-width: 85%; }
+  .chat-user { background: #58a6ff; color: #0d1117; margin-left: auto; text-align: right; }
+  .chat-bot { background: #21262d; color: #e6edf3; }
+  #chat-input-row { display: flex; border-top: 1px solid #30363d; }
+  #chat-input { flex: 1; background: #0d1117; color: #e6edf3; border: none; padding: 10px; font-size: 13px; }
+  #chat-send { background: #238636; color: white; border: none; padding: 10px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🤖 AI Multi-Agent Code Review System</h1>
+  <p class="subtitle">Upload files (add more anytime) — Python, JavaScript, Java, C/C++</p>
+
+  <div class="upload-box">
+    <input type="file" id="fileInput" accept=".py,.js,.java,.cpp,.c,.h" multiple>
+    <div class="file-chip-list" id="fileChips"></div>
+    <button class="btn" onclick="analyzeAll()">Review All Files</button>
+    <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+  </div>
+
+  <div id="resultsArea" style="display:none;">
+    <div class="summary-bar">
+      <table id="summaryTable">
+        <tr><th>File</th><th>Language</th><th>Issues</th><th>Score</th></tr>
+      </table>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-section="all">All Files</div>
+      <div class="tab" data-section="bugs">🐛 Bug Issues</div>
+      <div class="tab" data-section="style">🎨 Style Issues</div>
+      <div class="tab" data-section="performance">⚡ Performance Issues</div>
+      <div class="tab" data-section="security">🔒 Security Issues</div>
+      <div class="tab" data-section="documentation">📝 Documentation Issues</div>
+    </div>
+
+    <div id="section-all" class="section active"></div>
+    <div id="section-bugs" class="section"></div>
+    <div id="section-style" class="section"></div>
+    <div id="section-performance" class="section"></div>
+    <div id="section-security" class="section"></div>
+    <div id="section-documentation" class="section"></div>
+  </div>
+</div>
+
+<!-- Chat widget -->
+<button id="chat-toggle" onclick="toggleChat()">💬</button>
+<div id="chat-box">
+  <div id="chat-header">🤖 Code Assistant</div>
+  <div id="chat-messages">
+    <div class="chat-msg chat-bot">Hi! Ask me about any issue type (e.g. "what is trailing whitespace?") or how scoring works.</div>
+  </div>
+  <div id="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChat()">
+    <button id="chat-send" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script>
+let selectedFiles = [];
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  for (let f of e.target.files) {
+    if (!selectedFiles.some(existing => existing.name === f.name)) {
+      selectedFiles.push(f);
+    }
+  }
+  this.value = "";
+  renderChips();
+});
+
+function renderChips() {
+  const chipsDiv = document.getElementById('fileChips');
+  chipsDiv.innerHTML = '';
+  selectedFiles.forEach((f, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = `📄 ${f.name} <span class="remove" onclick="removeFile(${idx})">✕</span>`;
+    chipsDiv.appendChild(chip);
+  });
+}
+
+function removeFile(idx) {
+  selectedFiles.splice(idx, 1);
+  renderChips();
+}
+
+function clearAll() {
+  selectedFiles = [];
+  renderChips();
+  document.getElementById('resultsArea').style.display = 'none';
+}
+
+async function analyzeAll() {
+  if (selectedFiles.length === 0) {
+    alert('Please select at least one file.');
+    return;
+  }
+  const formData = new FormData();
+  selectedFiles.forEach(f => formData.append('files', f));
+
+  const res = await fetch('/analyze', { method: 'POST', body: formData });
+  const results = await res.json();
+  renderResults(results);
+}
+
+function scoreClass(score) {
+  if (score >= 7) return 'score-good';
+  if (score >= 4) return 'score-mid';
+  return 'score-bad';
+}
+
+function renderResults(results) {
+  document.getElementById('resultsArea').style.display = 'block';
+
+  // Summary table
+  const table = document.getElementById('summaryTable');
+  table.innerHTML = '<tr><th>File</th><th>Language</th><th>Issues</th><th>Score</th></tr>';
+  results.forEach(r => {
+    table.innerHTML += `<tr><td>${r.file}</td><td>${r.language}</td><td>${r.total_issues}</td><td><b>${r.score}/10</b></td></tr>`;
+  });
+
+  // All files section
+  const allDiv = document.getElementById('section-all');
+  allDiv.innerHTML = '';
+  results.forEach(r => {
+    allDiv.innerHTML += buildFileCard(r);
+  });
+
+  // Category sections
+  const categories = {
+    bugs: { key: 'bugs', icon: '🐛', title: 'Bug Detector Agent' },
+    style: { key: 'style', icon: '🎨', title: 'Style Checker Agent' },
+    performance: { key: 'performance', icon: '⚡', title: 'Performance Agent' },
+    security: { key: 'security', icon: '🔒', title: 'Security Agent' },
+    documentation: { key: 'documentation', icon: '📝', title: 'Documentation Agent' },
+  };
+
+  Object.entries(categories).forEach(([sectionId, cfg]) => {
+    const div = document.getElementById('section-' + sectionId);
+    div.innerHTML = '';
+    let any = false;
+    results.forEach(r => {
+      const issues = r[cfg.key] || [];
+      if (issues.length > 0) {
+        any = true;
+        let html = `<div class="file-result"><div class="file-header"><h3>📄 ${r.file} <span class="lang-tag">[${r.language}]</span></h3></div>`;
+        issues.forEach(([issue, fix]) => {
+          html += `<div class="issue">⚠️ ${issue}<div class="fix">💡 Fix: ${fix}</div></div>`;
+        });
+        html += `</div>`;
+        div.innerHTML += html;
+      }
+    });
+    if (!any) {
+      div.innerHTML = `<p class="ok">✅ No ${cfg.title} issues found in any file!</p>`;
+    }
+  });
+}
+
+function buildFileCard(r) {
+  let html = `<div class="file-result">
+    <div class="file-header">
+      <h3>📄 ${r.file} <span class="lang-tag">[${r.language}]</span></h3>
+      <span class="score-badge ${scoreClass(r.score)}">${r.score}/10</span>
+    </div>`;
+
+  const sections = [
+    ['bugs', '🐛 Bug Detector Agent'],
+    ['style', '🎨 Style Checker Agent'],
+    ['performance', '⚡ Performance Agent'],
+    ['security', '🔒 Security Agent'],
+    ['documentation', '📝 Documentation Agent'],
+  ];
+
+  sections.forEach(([key, title]) => {
+    const issues = r[key] || [];
+    html += `<div style="padding:10px 18px; border-top:1px solid #30363d;"><div style="font-weight:bold; margin-bottom:6px;">${title}</div>`;
+    if (issues.length > 0) {
+      issues.forEach(([issue, fix]) => {
+        html += `<div class="issue">⚠️ ${issue}<div class="fix">💡 Fix: ${fix}</div></div>`;
+      });
+    } else {
+      html += `<p class="ok">✅ No issues found!</p>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('section-' + tab.dataset.section).classList.add('active');
+  });
+});
+
+// Chat
+function toggleChat() {
+  document.getElementById('chat-box').classList.toggle('open');
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const messages = document.getElementById('chat-messages');
+  messages.innerHTML += `<div class="chat-msg chat-user">${msg}</div>`;
+  input.value = '';
+  messages.scrollTop = messages.scrollHeight;
+
+  const res = await fetch('/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: msg })
+  });
+  const data = await res.json();
+  messages.innerHTML += `<div class="chat-msg chat-bot">${data.reply}</div>`;
+  messages.scrollTop = messages.scrollHeight;
+}
+</script>
+</body>
+</html>

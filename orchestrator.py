@@ -207,10 +207,13 @@ def run_performance_checks(file_path, code_lines):
 # ============ SCORING & REPORTING ============
 
 def calculate_score(total_issues, total_lines):
+    """Score based on error percentage: every 10% error rate reduces score by 1"""
     if total_lines == 0:
         return 10
-    ratio = total_issues / total_lines
-    score = max(0, 10 - (ratio * 15))
+    error_percentage = (total_issues / total_lines) * 100
+    penalty = error_percentage / 10
+    score = 10 - penalty
+    score = max(0, min(10, score))
     return round(score, 1)
 
 
@@ -257,6 +260,18 @@ def review_file(file_path):
     print(f"  Code Quality Score: {score}/10")
     print(f"{'='*60}{Style.RESET_ALL}\n")
 
+    return {
+        "file": file_path,
+        "language": language,
+        "bugs": bug_issues,
+        "style": style_issues,
+        "performance": perf_issues,
+        "security": security_issues,
+        "documentation": doc_issues,
+        "total_issues": total,
+        "score": score
+    }
+
     return total, score
 
 
@@ -283,8 +298,8 @@ def orchestrator(target):
 
     results = {}
     for file_path in py_files:
-        total, score = review_file(file_path)
-        results[file_path] = (score, get_language(file_path))
+       data = review_file(file_path)
+       results[file_path] = (data["score"], data["language"])
 
     print(f"{Fore.CYAN}{'='*60}")
     print(f"  📊 SUMMARY")
