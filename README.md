@@ -21,3 +21,13 @@ Built using the **Agent Orchestration** pattern — where a central orchestrator
 - Add a Performance Agent to detect inefficient code
 - Auto-fix detected issues
 - GitHub Actions integration for automatic PR reviews
+@@new features............
+## Agents
+
+1. **Bug Detector Agent** — Finds bare excepts, incomplete expressions, debug prints
+2. **Style Checker Agent** — PEP8 violations (line length, whitespace, tabs)
+3. **Performance Agent** — Detects nested loops, inefficient patterns
+
+## Code Quality Score
+
+Each file gets a score out of 10 based on issue density. Lower score = more issues relative to file size.
