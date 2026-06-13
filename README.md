@@ -1,34 +1,41 @@
-# Code Review Agent System
+# 🤖 AI Multi-Agent Code Review System
 
-An AI-inspired orchestration system that automatically reviews Python code using specialized agents.
+A web-based orchestration platform where a central orchestrator delegates code analysis to 5 specialized AI agents — inspired by the Agent Orchestration pattern.
+
+## Features
+
+- **Multi-language support**: Python, JavaScript, Java, C/C++
+- **Multi-file upload**: Add files cumulatively, review all at once
+- **5 Specialized Agents**:
+  - 🐛 Bug Detector Agent
+  - 🎨 Style Checker Agent
+  - ⚡ Performance Agent
+  - 🔒 Security Agent
+  - 📝 Documentation Agent
+- **Section-wise view**: Browse issues by category across all files
+- **Code Quality Scoring**: 0-10 score based on issue density
+- **Built-in Chat Assistant**: Ask about any detected issue and get explanations
 
 ## How It Works
 
-The **Orchestrator** reads a Python file and delegates analysis to two specialized agents:
+The **Orchestrator** receives uploaded files, detects their language, and delegates analysis to each specialized agent. Results are aggregated into a score and displayed in an organized dashboard.
 
-- **Bug Detector Agent** — Identifies common issues like bare except clauses, incomplete comparisons, and debug print statements
-- **Style Checker Agent** — Checks for PEP8 violations like long lines, trailing whitespace, and tab usage
+## Tech Stack
 
-## Usage# code-review-agent-systemPlace your code in `sample_code.py` and run the orchestrator to get a full review report.
+- Python, Flask (backend)
+- HTML/CSS/JavaScript (frontend)
+- Regex-based static analysis engine
 
-## Inspiration
-
-Built using the **Agent Orchestration** pattern — where a central orchestrator agent coordinates specialized sub-agents to complete complex tasks, similar to a project manager directing a team.
+## Usage Open the forwarded port (5000) in your browser, upload code files, and click "Review All Files".
 
 ## Future Scope
 
-- Integrate with GitHub Copilot CLI for AI-powered suggestions
-- Add a Performance Agent to detect inefficient code
-- Auto-fix detected issues
+- Real GitHub Copilot AI integration for deeper suggestions
 - GitHub Actions integration for automatic PR reviews
-@@new features............
-## Agents
+- Auto-fix application
+- Support for more languages (Go, Rust, TypeScript)## 🎥 Demo Video
 
-1. **Bug Detector Agent** — Finds bare excepts, incomplete expressions, debug prints
-2. **Style Checker Agent** — PEP8 violations (line length, whitespace, tabs)
-3. **Performance Agent** — Detects nested loops, inefficient patterns
+## 🎥 Demo Video
 
-## Code Quality Score
-
-Each file gets a score out of 10 based on issue density. Lower score = more issues 
+[Download and watch the demo video](My%20Movie%201.mp4)
 
