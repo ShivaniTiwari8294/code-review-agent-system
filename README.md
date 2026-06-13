@@ -30,4 +30,5 @@ Built using the **Agent Orchestration** pattern — where a central orchestrator
 
 ## Code Quality Score
 
-Each file gets a score out of 10 based on issue density. Lower score = more issues relative to file size.
+Each file gets a score out of 10 based on issue density. Lower score = more issues 
+
